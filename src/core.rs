@@ -7,7 +7,7 @@ use std::collections::HashMap;
 use std::fmt;
 
 use super::error::*;
-use super::parser::*;
+use super::lexer::*;
 use super::stmt::*;
 
 // Statement Parser initialization.
@@ -97,7 +97,7 @@ pub type Keyword = &'static str;
 pub type StmtCollection = HashMap<String, Vec<YangStmt>>;
 
 // Statement Parser callback type.
-type StmtParserFn = fn(&mut Parser) -> Result<YangStmt, YangError>;
+type StmtParserFn = fn(&mut Lexer) -> Result<YangStmt, YangError>;
 
 // Yang Statement
 #[derive(Clone, PartialEq)]

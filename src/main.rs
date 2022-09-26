@@ -10,7 +10,7 @@ use std::io::prelude::*;
 use getopts::Options;
 
 use yang_rs::config::Config;
-use yang_rs::parser::Parser;
+use yang_rs::lexer::Lexer;
 
 const YANG_RS_VERSION: &str = "0.1.0";
 
@@ -33,7 +33,7 @@ pub fn parse_file(filename: &str, config: Config) -> std::io::Result<()> {
 
     f.read_to_string(&mut s)?;
 
-    let yang = Parser::parse_yang_from_string(s, config)?;
+    let yang = Lexer::parse_yang_from_string(s, config)?;
     println!("{:?}", yang);
     Ok(())
 }

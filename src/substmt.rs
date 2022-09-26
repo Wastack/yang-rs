@@ -7,7 +7,7 @@ use std::collections::HashMap;
 
 use super::core::*;
 use super::error::*;
-use super::parser::*;
+use super::lexer::*;
 use super::stmt::UnknownStmt;
 
 pub type StmtKeywordFn = fn() -> Keyword;
@@ -45,7 +45,7 @@ pub struct SubStmtUtil;
 
 impl SubStmtUtil {
     // Parse a single statement.
-    pub fn call_stmt_parser(parser: &mut Parser, keyword: &str) -> Result<YangStmt, YangError> {
+    pub fn call_stmt_parser(parser: &mut Lexer, keyword: &str) -> Result<YangStmt, YangError> {
         match STMT_PARSER.get(keyword) {
             Some(f) => f(parser),
             None => UnknownStmt::parse(parser, keyword),
@@ -53,7 +53,7 @@ impl SubStmtUtil {
     }
 
     pub fn parse_substmts(
-        parser: &mut Parser,
+        parser: &mut Lexer,
         def: Vec<SubStmtDef>,
     ) -> Result<StmtCollection, YangError> {
         // TBD: want to cache this definition somewhere.

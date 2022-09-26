@@ -13,7 +13,7 @@ use derive_getters::Getters;
 
 use super::core::*;
 use super::error::*;
-use super::parser::*;
+use super::lexer::*;
 
 // Aliases.
 pub type Prefix = Identifier;
@@ -47,7 +47,7 @@ pub type Prefix = Identifier;
 //              %x100000-10FFFD  ; exclude noncharacters %x10FFFE-10FFFF
 //
 // YANG string, quoted or unquoted.
-fn parse_string(parser: &mut Parser) -> Result<String, YangError> {
+fn parse_string(parser: &mut Lexer) -> Result<String, YangError> {
     let token = parser.get_token()?;
     match token {
         // Statement argument.
@@ -64,7 +64,7 @@ fn parse_string(parser: &mut Parser) -> Result<String, YangError> {
 ///
 pub trait StmtArg {
     /// Parse token and return StmtArg if it is valid.
-    fn parse_arg(parser: &mut Parser) -> Result<Self, YangError>
+    fn parse_arg(parser: &mut Lexer) -> Result<Self, YangError>
     where
         Self: Sized;
 }
@@ -76,7 +76,7 @@ pub trait StmtArg {
 pub struct NoArg;
 
 impl StmtArg for NoArg {
-    fn parse_arg(_parser: &mut Parser) -> Result<Self, YangError> {
+    fn parse_arg(_parser: &mut Lexer) -> Result<Self, YangError> {
         Ok(NoArg)
     }
 }
@@ -108,7 +108,7 @@ impl FromStr for Identifier {
 }
 
 impl StmtArg for Identifier {
-    fn parse_arg(parser: &mut Parser) -> Result<Self, YangError> {
+    fn parse_arg(parser: &mut Lexer) -> Result<Self, YangError> {
         let str = parse_string(parser)?;
 
         match Identifier::from_str(&str) {
@@ -171,7 +171,7 @@ impl FromStr for IdentifierRef {
 }
 
 impl StmtArg for IdentifierRef {
-    fn parse_arg(parser: &mut Parser) -> Result<Self, YangError> {
+    fn parse_arg(parser: &mut Lexer) -> Result<Self, YangError> {
         let str = parse_string(parser)?;
         IdentifierRef::from_str(&str).map_err(|e| YangError::ArgumentParseError(e.str))
     }
@@ -230,7 +230,7 @@ impl ToString for NodeIdentifier {
 }
 
 impl StmtArg for NodeIdentifier {
-    fn parse_arg(parser: &mut Parser) -> Result<Self, YangError> {
+    fn parse_arg(parser: &mut Lexer) -> Result<Self, YangError> {
         let str = parse_string(parser)?;
         NodeIdentifier::from_str(&str).map_err(|e| YangError::ArgumentParseError(e.str))
     }
@@ -275,14 +275,14 @@ impl FromStr for UnknownStmtKeyword {
 
 // Yang String.
 impl StmtArg for String {
-    fn parse_arg(parser: &mut Parser) -> Result<Self, YangError> {
+    fn parse_arg(parser: &mut Lexer) -> Result<Self, YangError> {
         Ok(parse_string(parser)?)
     }
 }
 
 // URL string.
 impl StmtArg for Url {
-    fn parse_arg(parser: &mut Parser) -> Result<Self, YangError> {
+    fn parse_arg(parser: &mut Lexer) -> Result<Self, YangError> {
         let s = parse_string(parser)?;
 
         match Url::parse(&s) {
@@ -301,7 +301,7 @@ pub struct YangVersionArg {
 }
 
 impl StmtArg for YangVersionArg {
-    fn parse_arg(parser: &mut Parser) -> Result<Self, YangError> {
+    fn parse_arg(parser: &mut Lexer) -> Result<Self, YangError> {
         let str = parse_string(parser)?;
 
         // According to RFC7950, the version should be "1.1", but we relax it.
@@ -342,7 +342,7 @@ impl FromStr for DateArg {
 }
 
 impl StmtArg for DateArg {
-    fn parse_arg(parser: &mut Parser) -> Result<Self, YangError> {
+    fn parse_arg(parser: &mut Lexer) -> Result<Self, YangError> {
         let str = parse_string(parser)?;
 
         if str.chars().count() == 10 {
@@ -388,7 +388,7 @@ impl FromStr for YinElementArg {
 }
 
 impl StmtArg for YinElementArg {
-    fn parse_arg(parser: &mut Parser) -> Result<Self, YangError> {
+    fn parse_arg(parser: &mut Lexer) -> Result<Self, YangError> {
         let str = parse_string(parser)?;
 
         YinElementArg::from_str(&str).map_err(|_| YangError::ArgumentParseError("yin-element-arg"))
@@ -410,7 +410,7 @@ impl ToString for FractionDigitsArg {
 }
 
 impl StmtArg for FractionDigitsArg {
-    fn parse_arg(parser: &mut Parser) -> Result<Self, YangError> {
+    fn parse_arg(parser: &mut Lexer) -> Result<Self, YangError> {
         let str = parse_string(parser)?;
         match str.parse::<u8>() {
             Ok(num) if num >= 1 && num <= 18 => Ok(FractionDigitsArg { digits: num }),
@@ -435,7 +435,7 @@ pub struct StatusArg {
 }
 
 impl StmtArg for StatusArg {
-    fn parse_arg(parser: &mut Parser) -> Result<Self, YangError> {
+    fn parse_arg(parser: &mut Lexer) -> Result<Self, YangError> {
         let str = parse_string(parser)?;
         if str == "current" {
             Ok(StatusArg {
@@ -464,7 +464,7 @@ pub struct ConfigArg {
 }
 
 impl StmtArg for ConfigArg {
-    fn parse_arg(parser: &mut Parser) -> Result<Self, YangError> {
+    fn parse_arg(parser: &mut Lexer) -> Result<Self, YangError> {
         let str = parse_string(parser)?;
         if str == "true" {
             Ok(ConfigArg { arg: true })
@@ -485,7 +485,7 @@ pub struct MandatoryArg {
 }
 
 impl StmtArg for MandatoryArg {
-    fn parse_arg(parser: &mut Parser) -> Result<Self, YangError> {
+    fn parse_arg(parser: &mut Lexer) -> Result<Self, YangError> {
         let str = parse_string(parser)?;
         if str == "true" {
             Ok(MandatoryArg { arg: true })
@@ -512,7 +512,7 @@ pub struct OrderedByArg {
 }
 
 impl StmtArg for OrderedByArg {
-    fn parse_arg(parser: &mut Parser) -> Result<Self, YangError> {
+    fn parse_arg(parser: &mut Lexer) -> Result<Self, YangError> {
         let str = parse_string(parser)?;
         if str == "user" {
             Ok(OrderedByArg {
@@ -537,7 +537,7 @@ pub struct MinValueArg {
 }
 
 impl StmtArg for MinValueArg {
-    fn parse_arg(parser: &mut Parser) -> Result<Self, YangError> {
+    fn parse_arg(parser: &mut Lexer) -> Result<Self, YangError> {
         let str = parse_string(parser)?;
         if is_non_negative_integer_value(&str) {
             match str.parse::<u64>() {
@@ -574,7 +574,7 @@ pub struct MaxValueArg {
 }
 
 impl StmtArg for MaxValueArg {
-    fn parse_arg(parser: &mut Parser) -> Result<Self, YangError> {
+    fn parse_arg(parser: &mut Lexer) -> Result<Self, YangError> {
         let str = parse_string(parser)?;
 
         if str == "unbounded" {
@@ -603,7 +603,7 @@ pub struct IntegerValue {
 }
 
 impl StmtArg for IntegerValue {
-    fn parse_arg(parser: &mut Parser) -> Result<Self, YangError> {
+    fn parse_arg(parser: &mut Lexer) -> Result<Self, YangError> {
         let str = parse_string(parser)?;
         if is_integer_value(&str) {
             match str.parse::<i64>() {
@@ -661,7 +661,7 @@ pub struct RangeArg {
 }
 
 impl StmtArg for RangeArg {
-    fn parse_arg(parser: &mut Parser) -> Result<Self, YangError> {
+    fn parse_arg(parser: &mut Lexer) -> Result<Self, YangError> {
         let str = parse_string(parser)?;
         let parts: Vec<_> = str.split('|').collect();
         let mut v = Vec::new();
@@ -739,7 +739,7 @@ pub struct LengthArg {
 }
 
 impl StmtArg for LengthArg {
-    fn parse_arg(parser: &mut Parser) -> Result<Self, YangError> {
+    fn parse_arg(parser: &mut Lexer) -> Result<Self, YangError> {
         let str = parse_string(parser)?;
         let parts: Vec<_> = str.split('|').collect();
         let mut v = Vec::new();
@@ -785,7 +785,7 @@ impl StmtArg for LengthArg {
 pub struct ModifierArg {}
 
 impl StmtArg for ModifierArg {
-    fn parse_arg(parser: &mut Parser) -> Result<Self, YangError> {
+    fn parse_arg(parser: &mut Lexer) -> Result<Self, YangError> {
         let str = parse_string(parser)?;
         if str == "invert-match" {
             Ok(ModifierArg {})
@@ -804,7 +804,7 @@ pub struct PositionValueArg {
 }
 
 impl StmtArg for PositionValueArg {
-    fn parse_arg(parser: &mut Parser) -> Result<Self, YangError> {
+    fn parse_arg(parser: &mut Lexer) -> Result<Self, YangError> {
         let str = parse_string(parser)?;
         if is_non_negative_integer_value(&str) {
             match str.parse::<u64>() {
@@ -827,7 +827,7 @@ pub enum PathArg {
 }
 
 impl StmtArg for PathArg {
-    fn parse_arg(parser: &mut Parser) -> Result<Self, YangError> {
+    fn parse_arg(parser: &mut Lexer) -> Result<Self, YangError> {
         let str = parse_string(parser)?;
 
         if str.starts_with('/') {
@@ -1302,7 +1302,7 @@ impl IfFeatureExpr {
 }
 
 impl StmtArg for IfFeatureExpr {
-    fn parse_arg(parser: &mut Parser) -> Result<Self, YangError> {
+    fn parse_arg(parser: &mut Lexer) -> Result<Self, YangError> {
         let str = parse_string(parser)?;
         let mut tokenizer = Tokenizer::new(str);
 
@@ -1360,7 +1360,7 @@ pub struct RequireInstanceArg {
 }
 
 impl StmtArg for RequireInstanceArg {
-    fn parse_arg(parser: &mut Parser) -> Result<Self, YangError> {
+    fn parse_arg(parser: &mut Lexer) -> Result<Self, YangError> {
         let str = parse_string(parser)?;
         if str == "true" {
             Ok(RequireInstanceArg { arg: true })
@@ -1381,7 +1381,7 @@ pub struct KeyArg {
 }
 
 impl StmtArg for KeyArg {
-    fn parse_arg(parser: &mut Parser) -> Result<Self, YangError> {
+    fn parse_arg(parser: &mut Lexer) -> Result<Self, YangError> {
         let str = parse_string(parser)?;
         let mut keys = Vec::new();
         let mut s = &str[..];
@@ -1414,7 +1414,7 @@ pub enum SchemaNodeid {
 }
 
 impl StmtArg for SchemaNodeid {
-    fn parse_arg(parser: &mut Parser) -> Result<Self, YangError> {
+    fn parse_arg(parser: &mut Lexer) -> Result<Self, YangError> {
         let str = parse_string(parser)?;
         if str.starts_with('/') {
             Ok(SchemaNodeid::Absolute(
@@ -1481,7 +1481,7 @@ impl FromStr for DescendantSchemaNodeid {
 }
 
 impl StmtArg for AbsoluteSchemaNodeid {
-    fn parse_arg(parser: &mut Parser) -> Result<Self, YangError> {
+    fn parse_arg(parser: &mut Lexer) -> Result<Self, YangError> {
         let str = parse_string(parser)?;
 
         AbsoluteSchemaNodeid::from_str(&str).map_err(|e| YangError::ArgumentParseError(e.str))
@@ -1489,7 +1489,7 @@ impl StmtArg for AbsoluteSchemaNodeid {
 }
 
 impl StmtArg for DescendantSchemaNodeid {
-    fn parse_arg(parser: &mut Parser) -> Result<Self, YangError> {
+    fn parse_arg(parser: &mut Lexer) -> Result<Self, YangError> {
         let str = parse_string(parser)?;
 
         DescendantSchemaNodeid::from_str(&str).map_err(|e| YangError::ArgumentParseError(e.str))
@@ -1528,7 +1528,7 @@ pub struct UniqueArg {
 }
 
 impl StmtArg for UniqueArg {
-    fn parse_arg(parser: &mut Parser) -> Result<Self, YangError> {
+    fn parse_arg(parser: &mut Lexer) -> Result<Self, YangError> {
         let str = parse_string(parser)?;
         UniqueArg::from_str(&str).map_err(|e| YangError::ArgumentParseError(e.str))
     }
@@ -1567,7 +1567,7 @@ mod tests {
     #[test]
     pub fn test_identifier() {
         let s = " hello-world ";
-        let mut parser = Parser::new(s.to_string());
+        let mut parser = Lexer::new(s.to_string());
 
         match Identifier::parse_arg(&mut parser) {
             Ok(arg) => assert_eq!(
@@ -1580,7 +1580,7 @@ mod tests {
         }
 
         let s = " _123.IdEnT.456-789_ ";
-        let mut parser = Parser::new(s.to_string());
+        let mut parser = Lexer::new(s.to_string());
 
         match Identifier::parse_arg(&mut parser) {
             Ok(arg) => assert_eq!(
@@ -1593,7 +1593,7 @@ mod tests {
         }
 
         let s = " 123 ";
-        let mut parser = Parser::new(s.to_string());
+        let mut parser = Lexer::new(s.to_string());
 
         match Identifier::parse_arg(&mut parser) {
             Ok(_) => assert!(false),
@@ -1601,7 +1601,7 @@ mod tests {
         }
 
         let s = " 123$ ";
-        let mut parser = Parser::new(s.to_string());
+        let mut parser = Lexer::new(s.to_string());
 
         match Identifier::parse_arg(&mut parser) {
             Ok(_) => assert!(false),
@@ -1612,7 +1612,7 @@ mod tests {
     #[test]
     pub fn test_identifier_ref() {
         let s = " prefix:hello-world ";
-        let mut parser = Parser::new(s.to_string());
+        let mut parser = Lexer::new(s.to_string());
 
         match IdentifierRef::parse_arg(&mut parser) {
             Ok(arg) => assert_eq!(arg.to_string(), "prefix:hello-world"),
@@ -1620,7 +1620,7 @@ mod tests {
         }
 
         let s = " _prefix_:_123.IdEnT.456-789_ ";
-        let mut parser = Parser::new(s.to_string());
+        let mut parser = Lexer::new(s.to_string());
 
         match IdentifierRef::parse_arg(&mut parser) {
             Ok(arg) => assert_eq!(arg.to_string(), "_prefix_:_123.IdEnT.456-789_"),
@@ -1628,7 +1628,7 @@ mod tests {
         }
 
         let s = " 123:456 ";
-        let mut parser = Parser::new(s.to_string());
+        let mut parser = Lexer::new(s.to_string());
 
         match IdentifierRef::parse_arg(&mut parser) {
             Ok(_) => assert!(false),
@@ -1636,7 +1636,7 @@ mod tests {
         }
 
         let s = " _123:_456 ";
-        let mut parser = Parser::new(s.to_string());
+        let mut parser = Lexer::new(s.to_string());
 
         match IdentifierRef::parse_arg(&mut parser) {
             Ok(arg) => assert_eq!(arg.to_string(), "_123:_456"),
@@ -1644,7 +1644,7 @@ mod tests {
         }
 
         let s = " _123: ";
-        let mut parser = Parser::new(s.to_string());
+        let mut parser = Lexer::new(s.to_string());
 
         match IdentifierRef::parse_arg(&mut parser) {
             Ok(_) => assert!(false),
@@ -1655,7 +1655,7 @@ mod tests {
     #[test]
     pub fn test_date_arg() {
         let s = " 2021-08-01 ";
-        let mut parser = Parser::new(s.to_string());
+        let mut parser = Lexer::new(s.to_string());
 
         match DateArg::parse_arg(&mut parser) {
             Ok(arg) => assert_eq!(arg.to_string(), "2021-08-01"),
@@ -1663,7 +1663,7 @@ mod tests {
         }
 
         let s = " 2021-8-1 ";
-        let mut parser = Parser::new(s.to_string());
+        let mut parser = Lexer::new(s.to_string());
 
         match DateArg::parse_arg(&mut parser) {
             Ok(_) => assert!(false),
@@ -1671,7 +1671,7 @@ mod tests {
         }
 
         let s = " 08-01-2021 ";
-        let mut parser = Parser::new(s.to_string());
+        let mut parser = Lexer::new(s.to_string());
 
         match DateArg::parse_arg(&mut parser) {
             Ok(_) => assert!(false),
@@ -1679,7 +1679,7 @@ mod tests {
         }
 
         let s = " 2021-08-0x ";
-        let mut parser = Parser::new(s.to_string());
+        let mut parser = Lexer::new(s.to_string());
 
         match DateArg::parse_arg(&mut parser) {
             Ok(_) => assert!(false),
@@ -1690,7 +1690,7 @@ mod tests {
     #[test]
     pub fn test_fraction_digits_arg() {
         let s = "18";
-        let mut parser = Parser::new(s.to_string());
+        let mut parser = Lexer::new(s.to_string());
 
         match FractionDigitsArg::parse_arg(&mut parser) {
             Ok(arg) => assert_eq!(arg.digits(), &18),
@@ -1698,7 +1698,7 @@ mod tests {
         }
 
         let s = "0";
-        let mut parser = Parser::new(s.to_string());
+        let mut parser = Lexer::new(s.to_string());
 
         match FractionDigitsArg::parse_arg(&mut parser) {
             Ok(_) => assert!(false),
@@ -1706,7 +1706,7 @@ mod tests {
         }
 
         let s = "19";
-        let mut parser = Parser::new(s.to_string());
+        let mut parser = Lexer::new(s.to_string());
 
         match FractionDigitsArg::parse_arg(&mut parser) {
             Ok(_) => assert!(false),
@@ -1717,7 +1717,7 @@ mod tests {
     #[test]
     pub fn test_range_arg() {
         let s = r#""1..10""#;
-        let mut parser = Parser::new(s.to_string());
+        let mut parser = Lexer::new(s.to_string());
 
         match RangeArg::parse_arg(&mut parser) {
             Ok(arg) => assert_eq!(
@@ -1730,7 +1730,7 @@ mod tests {
         }
 
         let s = r#""1 .. 10 | 21..30""#;
-        let mut parser = Parser::new(s.to_string());
+        let mut parser = Lexer::new(s.to_string());
 
         match RangeArg::parse_arg(&mut parser) {
             Ok(arg) => assert_eq!(
@@ -1746,7 +1746,7 @@ mod tests {
         }
 
         let s = r#""min..max""#;
-        let mut parser = Parser::new(s.to_string());
+        let mut parser = Lexer::new(s.to_string());
 
         match RangeArg::parse_arg(&mut parser) {
             Ok(arg) => assert_eq!(
@@ -1759,7 +1759,7 @@ mod tests {
         }
 
         let s = r#""min..""#;
-        let mut parser = Parser::new(s.to_string());
+        let mut parser = Lexer::new(s.to_string());
 
         match RangeArg::parse_arg(&mut parser) {
             Ok(_) => assert!(false),
@@ -1767,7 +1767,7 @@ mod tests {
         }
 
         let s = r#""1.01 .. 1.99""#;
-        let mut parser = Parser::new(s.to_string());
+        let mut parser = Lexer::new(s.to_string());
 
         match RangeArg::parse_arg(&mut parser) {
             Ok(arg) => assert_eq!(
@@ -1786,7 +1786,7 @@ mod tests {
     #[test]
     pub fn test_length_arg() {
         let s = r#""1..10""#;
-        let mut parser = Parser::new(s.to_string());
+        let mut parser = Lexer::new(s.to_string());
 
         match LengthArg::parse_arg(&mut parser) {
             Ok(arg) => assert_eq!(
@@ -1802,7 +1802,7 @@ mod tests {
         }
 
         let s = r#""1 .. 10 | 21..30""#;
-        let mut parser = Parser::new(s.to_string());
+        let mut parser = Lexer::new(s.to_string());
 
         match LengthArg::parse_arg(&mut parser) {
             Ok(arg) => assert_eq!(
@@ -1824,7 +1824,7 @@ mod tests {
         }
 
         let s = r#""min..max""#;
-        let mut parser = Parser::new(s.to_string());
+        let mut parser = Lexer::new(s.to_string());
 
         match LengthArg::parse_arg(&mut parser) {
             Ok(arg) => assert_eq!(
@@ -1837,7 +1837,7 @@ mod tests {
         }
 
         let s = r#""min..""#;
-        let mut parser = Parser::new(s.to_string());
+        let mut parser = Lexer::new(s.to_string());
 
         match LengthArg::parse_arg(&mut parser) {
             Ok(_) => assert!(false),
@@ -2047,7 +2047,7 @@ mod tests {
     #[test]
     pub fn test_if_feature_expr() {
         let s = r#""p1:id1 and p1:id2 or (p2:id3 and p2:id4) or not p3:id5""#;
-        let mut parser = Parser::new(s.to_string());
+        let mut parser = Lexer::new(s.to_string());
 
         match IfFeatureExpr::parse_arg(&mut parser) {
             Ok(expr) => assert_eq!(
@@ -2058,7 +2058,7 @@ mod tests {
         }
 
         let s = r#""p1:id1 and p1:id2 origin (p2:id3 and p2:id4)""#;
-        let mut parser = Parser::new(s.to_string());
+        let mut parser = Lexer::new(s.to_string());
 
         match IfFeatureExpr::parse_arg(&mut parser) {
             Ok(expr) => panic!("{:?}", expr),
@@ -2069,7 +2069,7 @@ mod tests {
         }
 
         let s = r#""p1:id1 p1:id2""#;
-        let mut parser = Parser::new(s.to_string());
+        let mut parser = Lexer::new(s.to_string());
 
         match IfFeatureExpr::parse_arg(&mut parser) {
             Ok(expr) => panic!("{:?}", expr),
@@ -2083,7 +2083,7 @@ mod tests {
     #[test]
     pub fn test_key_arg() {
         let s = r#""p1:id1 p1:id2 p2:id3 id4 id5""#;
-        let mut parser = Parser::new(s.to_string());
+        let mut parser = Lexer::new(s.to_string());
 
         match KeyArg::parse_arg(&mut parser) {
             Ok(arg) => assert_eq!(
@@ -2105,7 +2105,7 @@ mod tests {
     #[test]
     pub fn test_absolute_schema_nodeid() {
         let s = r#""/id1/id2/id3""#;
-        let mut parser = Parser::new(s.to_string());
+        let mut parser = Lexer::new(s.to_string());
 
         match AbsoluteSchemaNodeid::parse_arg(&mut parser) {
             Ok(arg) => {
@@ -2119,7 +2119,7 @@ mod tests {
     #[test]
     pub fn test_descendant_schema_nodeid() {
         let s = r#""id1/id2/id3""#;
-        let mut parser = Parser::new(s.to_string());
+        let mut parser = Lexer::new(s.to_string());
 
         match DescendantSchemaNodeid::parse_arg(&mut parser) {
             Ok(arg) => {

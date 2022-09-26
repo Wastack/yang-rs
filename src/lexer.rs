@@ -131,7 +131,7 @@ impl ToString for Token {
 }
 
 /// Parser.
-pub struct Parser {
+pub struct Lexer {
     /// Config.
     config: Config,
 
@@ -151,10 +151,10 @@ pub struct Parser {
     saved: Cell<Option<Token>>,
 }
 
-impl Parser {
+impl Lexer {
     /// Constructor.
-    pub fn new(s: String) -> Parser {
-        Parser {
+    pub fn new(s: String) -> Lexer {
+        Lexer {
             config: Config::new(),
             input: s,
             pos: Cell::new(0),
@@ -165,8 +165,8 @@ impl Parser {
     }
 
     /// Constructor with config.
-    pub fn new_with_config(s: String, config: Config) -> Parser {
-        Parser {
+    pub fn new_with_config(s: String, config: Config) -> Lexer {
+        Lexer {
             config,
             input: s,
             pos: Cell::new(0),
@@ -480,7 +480,7 @@ impl Parser {
 
     /// Parse string as an input, and return YangStmt. Encapsulate YangError into io::Error.
     pub fn parse_yang_from_string(s: String, config: Config) -> Result<YangStmt, std::io::Error> {
-        let mut parser = Parser::new_with_config(s, config);
+        let mut parser = Lexer::new_with_config(s, config);
         parser.parse_yang().map_err(|err| {
             Error::new(
                 ErrorKind::Other,
@@ -497,12 +497,13 @@ impl Parser {
 
 #[cfg(test)]
 mod tests {
+    use url::form_urlencoded::parse;
     use super::*;
 
     #[test]
     pub fn test_get_token() {
         let s = "module { }";
-        let mut parser = Parser::new(s.to_string());
+        let mut parser = Lexer::new(s.to_string());
 
         let token = parser.get_token().unwrap();
         assert_eq!(token, Token::Identifier("module".to_string()));
@@ -517,7 +518,7 @@ mod tests {
     #[test]
     pub fn test_get_token_comment_1() {
         let s = "module; /* comment */ statement";
-        let mut parser = Parser::new(s.to_string());
+        let mut parser = Lexer::new(s.to_string());
 
         let token = parser.get_token().unwrap();
         assert_eq!(token, Token::Identifier("module".to_string()));
@@ -533,7 +534,7 @@ mod tests {
     pub fn test_get_token_comment_2() {
         let s = "module // comment
 ";
-        let mut parser = Parser::new(s.to_string());
+        let mut parser = Lexer::new(s.to_string());
 
         let token = parser.get_token().unwrap();
         assert_eq!(token, Token::Identifier("module".to_string()));
@@ -545,7 +546,7 @@ mod tests {
     #[test]
     pub fn test_get_token_comment_3() {
         let s = "/* comment // */ module";
-        let mut parser = Parser::new(s.to_string());
+        let mut parser = Lexer::new(s.to_string());
 
         let token = parser.get_token().unwrap();
         assert_eq!(token, Token::Identifier("module".to_string()));
@@ -557,7 +558,7 @@ mod tests {
     #[test]
     pub fn test_get_token_comment_4() {
         let s = "// /* comment */ module";
-        let mut parser = Parser::new(s.to_string());
+        let mut parser = Lexer::new(s.to_string());
 
         let token = parser.get_token().unwrap();
         assert_eq!(token, Token::EndOfInput);
@@ -570,7 +571,7 @@ line comment */ "and this is a quoted multi
                  line string"
         "#;
 
-        let mut parser = Parser::new(s.to_string());
+        let mut parser = Lexer::new(s.to_string());
 
         let token = parser.get_token().unwrap();
         assert_eq!(token,
@@ -581,7 +582,7 @@ line comment */ "and this is a quoted multi
     #[test]
     pub fn test_get_token_string_1() {
         let s = r#" "string" "#;
-        let mut parser = Parser::new(s.to_string());
+        let mut parser = Lexer::new(s.to_string());
 
         let token = parser.get_token().unwrap();
         assert_eq!(
@@ -596,7 +597,7 @@ line comment */ "and this is a quoted multi
     #[test]
     pub fn test_get_token_string_2() {
         let s = r#" '"string"' "#;
-        let mut parser = Parser::new(s.to_string());
+        let mut parser = Lexer::new(s.to_string());
 
         let token = parser.get_token().unwrap();
         assert_eq!(
@@ -611,7 +612,7 @@ line comment */ "and this is a quoted multi
     #[test]
     pub fn test_get_token_string_3() {
         let s = r#" "Hello" + "World" { }"#;
-        let mut parser = Parser::new(s.to_string());
+        let mut parser = Lexer::new(s.to_string());
 
         let token = parser.get_token().unwrap();
         assert_eq!(
@@ -634,7 +635,7 @@ line comment */ "and this is a quoted multi
         let s = r#" 'string1
  string2 ' "#;
 
-        let mut parser = Parser::new(s.to_string());
+        let mut parser = Lexer::new(s.to_string());
 
         let token = parser.get_token().unwrap();
         assert_eq!(
@@ -651,7 +652,7 @@ line comment */ "and this is a quoted multi
         let s = r#"    "string1
      string2" "#;
 
-        let mut parser = Parser::new(s.to_string());
+        let mut parser = Lexer::new(s.to_string());
 
         let token = parser.get_token().unwrap();
         assert_eq!(
@@ -671,7 +672,7 @@ line comment */ "and this is a quoted multi
 	
  string3	" + "string4" "#;
 
-        let mut parser = Parser::new(s.to_string());
+        let mut parser = Lexer::new(s.to_string());
 
         let token = parser.get_token().unwrap();
         assert_eq!(
@@ -688,7 +689,7 @@ line comment */ "and this is a quoted multi
     #[test]
     pub fn test_get_token_empty() {
         let s = r#"identifier " ";"#;
-        let mut parser = Parser::new(s.to_string());
+        let mut parser = Lexer::new(s.to_string());
 
         let token = parser.get_token().unwrap();
         assert_eq!(token, Token::Identifier(String::from("identifier")));
@@ -697,12 +698,31 @@ line comment */ "and this is a quoted multi
         assert_eq!(token, Token::QuotedString(String::from(" ")));
 
         let s = r#"identifier "";"#;
-        let mut parser = Parser::new(s.to_string());
+        let mut parser = Lexer::new(s.to_string());
 
         let token = parser.get_token().unwrap();
         assert_eq!(token, Token::Identifier(String::from("identifier")));
 
         let token = parser.get_token().unwrap();
         assert_eq!(token, Token::QuotedString(String::from("")));
+    }
+
+    #[test]
+    pub fn test_indent_after_quoted_string() {
+        let s = r#"
+                       'myext:my extension' "double quoted
+                                              string argument";
+"#;
+
+        let mut parser = Lexer::new(s.to_string());
+
+        let token = parser.get_token().unwrap();
+        assert_eq!(token, Token::QuotedString(String::from("myext:my extension")));
+
+        let token = parser.get_token().unwrap();
+        assert_eq!(token, Token::QuotedString(String::from("double quoted string argument")));
+
+        let token = parser.get_token().unwrap();
+        assert_eq!(token, Token::StatementEnd);
     }
 }

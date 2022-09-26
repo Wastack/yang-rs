@@ -13,7 +13,7 @@ use super::compound::Compound;
 use super::compound::*;
 use super::core::*;
 use super::error::*;
-use super::parser::*;
+use super::lexer::*;
 use super::substmt::*;
 
 use crate::collect_a_stmt;
@@ -65,12 +65,12 @@ pub trait Stmt {
     }
 
     /// Parse substatements.
-    fn parse_substmts(_parser: &mut Parser) -> Result<Self::SubStmts, YangError> {
+    fn parse_substmts(_parser: &mut Lexer) -> Result<Self::SubStmts, YangError> {
         panic!("{:?}", Self::keyword());
     }
 
     /// Parse a statement and return the object wrapped in enum.
-    fn parse(parser: &mut Parser) -> Result<YangStmt, YangError>
+    fn parse(parser: &mut Lexer) -> Result<YangStmt, YangError>
     where
         Self::Arg: StmtArg,
         Self: Sized,
@@ -190,7 +190,7 @@ impl Stmt for ModuleStmt {
     }
 
     /// Parse substatements.
-    fn parse_substmts(parser: &mut Parser) -> Result<Self::SubStmts, YangError> {
+    fn parse_substmts(parser: &mut Lexer) -> Result<Self::SubStmts, YangError> {
         let module_header = ModuleHeaderStmts::parse(parser)?;
         let linkage = LinkageStmts::parse(parser)?;
         let meta = MetaStmts::parse(parser)?;
@@ -264,7 +264,7 @@ impl Stmt for SubmoduleStmt {
     }
 
     /// Parse substatements.
-    fn parse_substmts(parser: &mut Parser) -> Result<Self::SubStmts, YangError> {
+    fn parse_substmts(parser: &mut Lexer) -> Result<Self::SubStmts, YangError> {
         let submodule_header = SubmoduleHeaderStmts::parse(parser)?;
         let linkage = LinkageStmts::parse(parser)?;
         let meta = MetaStmts::parse(parser)?;
@@ -373,7 +373,7 @@ impl Stmt for ImportStmt {
     }
 
     /// Parse substatements.
-    fn parse_substmts(parser: &mut Parser) -> Result<Self::SubStmts, YangError> {
+    fn parse_substmts(parser: &mut Lexer) -> Result<Self::SubStmts, YangError> {
         let mut stmts = SubStmtUtil::parse_substmts(parser, Self::substmts_def())?;
 
         Ok((
@@ -460,7 +460,7 @@ impl Stmt for IncludeStmt {
     }
 
     /// Parse substatements.
-    fn parse_substmts(parser: &mut Parser) -> Result<Self::SubStmts, YangError> {
+    fn parse_substmts(parser: &mut Lexer) -> Result<Self::SubStmts, YangError> {
         let mut stmts = SubStmtUtil::parse_substmts(parser, Self::substmts_def())?;
 
         Ok((
@@ -577,7 +577,7 @@ impl Stmt for BelongsToStmt {
     }
 
     /// Parse substatements.
-    fn parse_substmts(parser: &mut Parser) -> Result<Self::SubStmts, YangError> {
+    fn parse_substmts(parser: &mut Lexer) -> Result<Self::SubStmts, YangError> {
         let mut stmts = SubStmtUtil::parse_substmts(parser, Self::substmts_def())?;
 
         Ok((collect_a_stmt!(stmts, PrefixStmt)?,))
@@ -799,7 +799,7 @@ impl Stmt for RevisionStmt {
     }
 
     /// Parse substatements.
-    fn parse_substmts(parser: &mut Parser) -> Result<Self::SubStmts, YangError> {
+    fn parse_substmts(parser: &mut Lexer) -> Result<Self::SubStmts, YangError> {
         let mut stmts = SubStmtUtil::parse_substmts(parser, Self::substmts_def())?;
 
         Ok((
@@ -921,7 +921,7 @@ impl Stmt for ExtensionStmt {
     }
 
     /// Parse substatements.
-    fn parse_substmts(parser: &mut Parser) -> Result<Self::SubStmts, YangError> {
+    fn parse_substmts(parser: &mut Lexer) -> Result<Self::SubStmts, YangError> {
         let mut stmts = SubStmtUtil::parse_substmts(parser, Self::substmts_def())?;
 
         Ok((
@@ -992,7 +992,7 @@ impl Stmt for ArgumentStmt {
     }
 
     /// Parse substatements.
-    fn parse_substmts(parser: &mut Parser) -> Result<Self::SubStmts, YangError> {
+    fn parse_substmts(parser: &mut Lexer) -> Result<Self::SubStmts, YangError> {
         let mut stmts = SubStmtUtil::parse_substmts(parser, Self::substmts_def())?;
 
         Ok((collect_opt_stmt!(stmts, YinElementStmt)?,))
@@ -1118,7 +1118,7 @@ impl Stmt for IdentityStmt {
     }
 
     /// Parse substatements.
-    fn parse_substmts(parser: &mut Parser) -> Result<Self::SubStmts, YangError> {
+    fn parse_substmts(parser: &mut Lexer) -> Result<Self::SubStmts, YangError> {
         let mut stmts = SubStmtUtil::parse_substmts(parser, Self::substmts_def())?;
 
         Ok((
@@ -1243,7 +1243,7 @@ impl Stmt for FeatureStmt {
     }
 
     /// Parse substatements.
-    fn parse_substmts(parser: &mut Parser) -> Result<Self::SubStmts, YangError> {
+    fn parse_substmts(parser: &mut Lexer) -> Result<Self::SubStmts, YangError> {
         let mut stmts = SubStmtUtil::parse_substmts(parser, Self::substmts_def())?;
 
         Ok((
@@ -1365,7 +1365,7 @@ impl Stmt for TypedefStmt {
     }
 
     /// Parse substatements.
-    fn parse_substmts(parser: &mut Parser) -> Result<Self::SubStmts, YangError> {
+    fn parse_substmts(parser: &mut Lexer) -> Result<Self::SubStmts, YangError> {
         let mut stmts = SubStmtUtil::parse_substmts(parser, Self::substmts_def())?;
 
         Ok((
@@ -1431,7 +1431,7 @@ impl Stmt for TypeStmt {
     }
 
     /// Parse substatements.
-    fn parse_substmts(parser: &mut Parser) -> Result<Self::SubStmts, YangError> {
+    fn parse_substmts(parser: &mut Lexer) -> Result<Self::SubStmts, YangError> {
         let type_body = TypeBodyStmts::parse(parser)?;
 
         Ok(Some(type_body))
@@ -1520,7 +1520,7 @@ impl Stmt for RangeStmt {
     }
 
     /// Parse substatements.
-    fn parse_substmts(parser: &mut Parser) -> Result<Self::SubStmts, YangError> {
+    fn parse_substmts(parser: &mut Lexer) -> Result<Self::SubStmts, YangError> {
         let mut stmts = SubStmtUtil::parse_substmts(parser, Self::substmts_def())?;
 
         Ok((
@@ -1644,7 +1644,7 @@ impl Stmt for LengthStmt {
     }
 
     /// Parse substatements.
-    fn parse_substmts(parser: &mut Parser) -> Result<Self::SubStmts, YangError> {
+    fn parse_substmts(parser: &mut Lexer) -> Result<Self::SubStmts, YangError> {
         let mut stmts = SubStmtUtil::parse_substmts(parser, Self::substmts_def())?;
 
         Ok((
@@ -1745,7 +1745,7 @@ impl Stmt for PatternStmt {
     }
 
     /// Parse substatements.
-    fn parse_substmts(parser: &mut Parser) -> Result<Self::SubStmts, YangError> {
+    fn parse_substmts(parser: &mut Lexer) -> Result<Self::SubStmts, YangError> {
         let mut stmts = SubStmtUtil::parse_substmts(parser, Self::substmts_def())?;
 
         Ok((
@@ -1907,7 +1907,7 @@ impl Stmt for EnumStmt {
     }
 
     /// Parse substatements.
-    fn parse_substmts(parser: &mut Parser) -> Result<Self::SubStmts, YangError> {
+    fn parse_substmts(parser: &mut Lexer) -> Result<Self::SubStmts, YangError> {
         let mut stmts = SubStmtUtil::parse_substmts(parser, Self::substmts_def())?;
 
         Ok((
@@ -2069,7 +2069,7 @@ impl Stmt for BitStmt {
     }
 
     /// Parse substatements.
-    fn parse_substmts(parser: &mut Parser) -> Result<Self::SubStmts, YangError> {
+    fn parse_substmts(parser: &mut Lexer) -> Result<Self::SubStmts, YangError> {
         let mut stmts = SubStmtUtil::parse_substmts(parser, Self::substmts_def())?;
 
         Ok((
@@ -2344,7 +2344,7 @@ impl Stmt for MustStmt {
     }
 
     /// Parse substatements.
-    fn parse_substmts(parser: &mut Parser) -> Result<Self::SubStmts, YangError> {
+    fn parse_substmts(parser: &mut Lexer) -> Result<Self::SubStmts, YangError> {
         let mut stmts = SubStmtUtil::parse_substmts(parser, Self::substmts_def())?;
 
         Ok((
@@ -2651,7 +2651,7 @@ impl Stmt for GroupingStmt {
     }
 
     /// Parse substatements.
-    fn parse_substmts(parser: &mut Parser) -> Result<Self::SubStmts, YangError> {
+    fn parse_substmts(parser: &mut Lexer) -> Result<Self::SubStmts, YangError> {
         let mut stmts = SubStmtUtil::parse_substmts(parser, Self::substmts_def())?;
 
         Ok((
@@ -2858,7 +2858,7 @@ impl Stmt for ContainerStmt {
     }
 
     /// Parse substatements.
-    fn parse_substmts(parser: &mut Parser) -> Result<Self::SubStmts, YangError> {
+    fn parse_substmts(parser: &mut Lexer) -> Result<Self::SubStmts, YangError> {
         let mut stmts = SubStmtUtil::parse_substmts(parser, Self::substmts_def())?;
 
         Ok((
@@ -3000,7 +3000,7 @@ impl Stmt for LeafStmt {
     }
 
     /// Parse substatements.
-    fn parse_substmts(parser: &mut Parser) -> Result<Self::SubStmts, YangError> {
+    fn parse_substmts(parser: &mut Lexer) -> Result<Self::SubStmts, YangError> {
         let mut stmts = SubStmtUtil::parse_substmts(parser, Self::substmts_def())?;
 
         Ok((
@@ -3141,7 +3141,7 @@ impl Stmt for LeafListStmt {
     }
 
     /// Parse substatements.
-    fn parse_substmts(parser: &mut Parser) -> Result<Self::SubStmts, YangError> {
+    fn parse_substmts(parser: &mut Lexer) -> Result<Self::SubStmts, YangError> {
         let mut stmts = SubStmtUtil::parse_substmts(parser, Self::substmts_def())?;
 
         Ok((
@@ -3344,7 +3344,7 @@ impl Stmt for ListStmt {
     }
 
     /// Parse substatements.
-    fn parse_substmts(parser: &mut Parser) -> Result<Self::SubStmts, YangError> {
+    fn parse_substmts(parser: &mut Lexer) -> Result<Self::SubStmts, YangError> {
         let mut stmts = SubStmtUtil::parse_substmts(parser, Self::substmts_def())?;
 
         Ok((
@@ -3591,7 +3591,7 @@ impl Stmt for ChoiceStmt {
     }
 
     /// Parse substatements.
-    fn parse_substmts(parser: &mut Parser) -> Result<Self::SubStmts, YangError> {
+    fn parse_substmts(parser: &mut Lexer) -> Result<Self::SubStmts, YangError> {
         let mut stmts = SubStmtUtil::parse_substmts(parser, Self::substmts_def())?;
 
         Ok((
@@ -3747,7 +3747,7 @@ impl Stmt for CaseStmt {
     }
 
     /// Parse substatements.
-    fn parse_substmts(parser: &mut Parser) -> Result<Self::SubStmts, YangError> {
+    fn parse_substmts(parser: &mut Lexer) -> Result<Self::SubStmts, YangError> {
         let mut stmts = SubStmtUtil::parse_substmts(parser, Self::substmts_def())?;
 
         Ok((
@@ -3880,7 +3880,7 @@ impl Stmt for AnydataStmt {
     }
 
     /// Parse substatements.
-    fn parse_substmts(parser: &mut Parser) -> Result<Self::SubStmts, YangError> {
+    fn parse_substmts(parser: &mut Lexer) -> Result<Self::SubStmts, YangError> {
         let mut stmts = SubStmtUtil::parse_substmts(parser, Self::substmts_def())?;
 
         Ok((
@@ -4006,7 +4006,7 @@ impl Stmt for AnyxmlStmt {
     }
 
     /// Parse substatements.
-    fn parse_substmts(parser: &mut Parser) -> Result<Self::SubStmts, YangError> {
+    fn parse_substmts(parser: &mut Lexer) -> Result<Self::SubStmts, YangError> {
         let mut stmts = SubStmtUtil::parse_substmts(parser, Self::substmts_def())?;
 
         Ok((
@@ -4125,7 +4125,7 @@ impl Stmt for UsesStmt {
     }
 
     /// Parse substatements.
-    fn parse_substmts(parser: &mut Parser) -> Result<Self::SubStmts, YangError> {
+    fn parse_substmts(parser: &mut Lexer) -> Result<Self::SubStmts, YangError> {
         let mut stmts = SubStmtUtil::parse_substmts(parser, Self::substmts_def())?;
 
         Ok((
@@ -4264,7 +4264,7 @@ impl Stmt for RefineStmt {
     }
 
     /// Parse substatements.
-    fn parse_substmts(parser: &mut Parser) -> Result<Self::SubStmts, YangError> {
+    fn parse_substmts(parser: &mut Lexer) -> Result<Self::SubStmts, YangError> {
         let mut stmts = SubStmtUtil::parse_substmts(parser, Self::substmts_def())?;
 
         Ok((
@@ -4406,7 +4406,7 @@ impl Stmt for AugmentStmt {
     }
 
     /// Parse substatements.
-    fn parse_substmts(parser: &mut Parser) -> Result<Self::SubStmts, YangError> {
+    fn parse_substmts(parser: &mut Lexer) -> Result<Self::SubStmts, YangError> {
         let mut stmts = SubStmtUtil::parse_substmts(parser, Self::substmts_def())?;
 
         Ok((
@@ -4497,7 +4497,7 @@ impl Stmt for WhenStmt {
     }
 
     /// Parse substatements.
-    fn parse_substmts(parser: &mut Parser) -> Result<Self::SubStmts, YangError> {
+    fn parse_substmts(parser: &mut Lexer) -> Result<Self::SubStmts, YangError> {
         let mut stmts = SubStmtUtil::parse_substmts(parser, Self::substmts_def())?;
 
         Ok((
@@ -4620,7 +4620,7 @@ impl Stmt for RpcStmt {
     }
 
     /// Parse substatements.
-    fn parse_substmts(parser: &mut Parser) -> Result<Self::SubStmts, YangError> {
+    fn parse_substmts(parser: &mut Lexer) -> Result<Self::SubStmts, YangError> {
         let mut stmts = SubStmtUtil::parse_substmts(parser, Self::substmts_def())?;
 
         Ok((
@@ -4751,7 +4751,7 @@ impl Stmt for ActionStmt {
     }
 
     /// Parse substatements.
-    fn parse_substmts(parser: &mut Parser) -> Result<Self::SubStmts, YangError> {
+    fn parse_substmts(parser: &mut Lexer) -> Result<Self::SubStmts, YangError> {
         let mut stmts = SubStmtUtil::parse_substmts(parser, Self::substmts_def())?;
 
         Ok((
@@ -4865,7 +4865,7 @@ impl Stmt for InputStmt {
     }
 
     /// Parse substatements.
-    fn parse_substmts(parser: &mut Parser) -> Result<Self::SubStmts, YangError> {
+    fn parse_substmts(parser: &mut Lexer) -> Result<Self::SubStmts, YangError> {
         let mut stmts = SubStmtUtil::parse_substmts(parser, Self::substmts_def())?;
 
         Ok((
@@ -4984,7 +4984,7 @@ impl Stmt for OutputStmt {
     }
 
     /// Parse substatements.
-    fn parse_substmts(parser: &mut Parser) -> Result<Self::SubStmts, YangError> {
+    fn parse_substmts(parser: &mut Lexer) -> Result<Self::SubStmts, YangError> {
         let mut stmts = SubStmtUtil::parse_substmts(parser, Self::substmts_def())?;
 
         Ok((
@@ -5152,7 +5152,7 @@ impl Stmt for NotificationStmt {
     }
 
     /// Parse substatements.
-    fn parse_substmts(parser: &mut Parser) -> Result<Self::SubStmts, YangError> {
+    fn parse_substmts(parser: &mut Lexer) -> Result<Self::SubStmts, YangError> {
         let mut stmts = SubStmtUtil::parse_substmts(parser, Self::substmts_def())?;
 
         Ok((
@@ -5241,7 +5241,7 @@ impl Stmt for DeviationStmt {
     }
 
     /// Parse substatements.
-    fn parse_substmts(parser: &mut Parser) -> Result<Self::SubStmts, YangError> {
+    fn parse_substmts(parser: &mut Lexer) -> Result<Self::SubStmts, YangError> {
         let mut stmts = SubStmtUtil::parse_substmts(parser, Self::substmts_def())?;
 
         Ok((
@@ -5283,7 +5283,7 @@ impl Stmt for DeviateStmt {
     }
 
     /// Parse a statement and return the object wrapped in enum.
-    fn parse(parser: &mut Parser) -> Result<YangStmt, YangError>
+    fn parse(parser: &mut Lexer) -> Result<YangStmt, YangError>
     where
         Self::Arg: StmtArg,
         Self: Sized,
@@ -5365,7 +5365,7 @@ impl Compound for DeviateAddStmt {
 }
 
 impl DeviateAddStmt {
-    pub fn parse(parser: &mut Parser) -> Result<DeviateAddStmt, YangError> {
+    pub fn parse(parser: &mut Lexer) -> Result<DeviateAddStmt, YangError> {
         let token = parser.get_token()?;
         match token {
             Token::BlockBegin => {
@@ -5433,7 +5433,7 @@ impl Compound for DeviateDeleteStmt {
 
 impl DeviateDeleteStmt {
     /// Parse a statement and return the object wrapped in enum.
-    fn parse(parser: &mut Parser) -> Result<DeviateDeleteStmt, YangError> {
+    fn parse(parser: &mut Lexer) -> Result<DeviateDeleteStmt, YangError> {
         let token = parser.get_token()?;
         match token {
             Token::BlockBegin => {
@@ -5504,7 +5504,7 @@ impl Compound for DeviateReplaceStmt {
 }
 
 impl DeviateReplaceStmt {
-    pub fn parse(parser: &mut Parser) -> Result<DeviateReplaceStmt, YangError> {
+    pub fn parse(parser: &mut Lexer) -> Result<DeviateReplaceStmt, YangError> {
         let token = parser.get_token()?;
         match token {
             Token::BlockBegin => {
@@ -5555,7 +5555,7 @@ pub struct UnknownStmt {
 
 impl UnknownStmt {
     /// Parse a statement and return the object wrapped in enum.
-    pub fn parse(parser: &mut Parser, keyword: &str) -> Result<YangStmt, YangError>
+    pub fn parse(parser: &mut Lexer, keyword: &str) -> Result<YangStmt, YangError>
     where
         Self: Sized,
     {
@@ -5610,7 +5610,7 @@ mod tests {
                        revision-date 2017-07-06;
                    }"#;
 
-        let mut parser = Parser::new(s.to_string());
+        let mut parser = Lexer::new(s.to_string());
         match ImportStmt::parse(&mut parser) {
             Ok(yang) => match yang {
                 YangStmt::ImportStmt(stmt) => {
@@ -5647,7 +5647,7 @@ mod tests {
                        revision-date 2017-07-06;
                    }"#;
 
-        let mut parser = Parser::new(s.to_string());
+        let mut parser = Lexer::new(s.to_string());
         match IncludeStmt::parse(&mut parser) {
             Ok(yang) => panic!("{:?}", yang),
             Err(err) => assert_eq!(err.to_string(), "Unexpected token Identifier '\"prefix\"'"),
@@ -5657,7 +5657,7 @@ mod tests {
                        revision-date 2017-07-06;
                    }"#;
 
-        let mut parser = Parser::new(s.to_string());
+        let mut parser = Lexer::new(s.to_string());
         match IncludeStmt::parse(&mut parser) {
             Ok(yang) => match yang {
                 YangStmt::IncludeStmt(stmt) => {
@@ -5692,7 +5692,7 @@ mod tests {
       ...";
     }"#;
 
-        let mut parser = Parser::new(s.to_string());
+        let mut parser = Lexer::new(s.to_string());
         match ExtensionStmt::parse(&mut parser) {
             Ok(yang) => match yang {
                 YangStmt::ExtensionStmt(stmt) => {
@@ -5745,7 +5745,7 @@ mod tests {
       "Small form-factor pluggable transceiver supporting up to
       10 Gb/s signal";
     }"#;
-        let mut parser = Parser::new(s.to_string());
+        let mut parser = Lexer::new(s.to_string());
         match IdentityStmt::parse(&mut parser) {
             Ok(yang) => match yang {
                 YangStmt::IdentityStmt(stmt) => {
@@ -5785,7 +5785,7 @@ mod tests {
                  Base Version 2";
     }"#;
 
-        let mut parser = Parser::new(s.to_string());
+        let mut parser = Lexer::new(s.to_string());
         match TypedefStmt::parse(&mut parser) {
             Ok(yang) => match yang {
                 YangStmt::TypedefStmt(stmt) => {
@@ -5825,7 +5825,7 @@ mod tests {
             "/oc-if:config/oc-if:up" {
       deviate add;
   }"#;
-        let mut parser = Parser::new(s.to_string());
+        let mut parser = Lexer::new(s.to_string());
         match DeviationStmt::parse(&mut parser) {
             Ok(yang) => match yang {
                 YangStmt::DeviationStmt(stmt) => {
@@ -5861,7 +5861,7 @@ mod tests {
       description
         "Hold-time 0 is not configurable on XE, use no dampening.";
   }"#;
-        let mut parser = Parser::new(s.to_string());
+        let mut parser = Lexer::new(s.to_string());
         match DeviationStmt::parse(&mut parser) {
             Ok(yang) => match yang {
                 YangStmt::DeviationStmt(stmt) => {
@@ -5906,7 +5906,7 @@ mod tests {
       description
         "Change the type of the last-change flag to date-and-time";
   }"#;
-        let mut parser = Parser::new(s.to_string());
+        let mut parser = Lexer::new(s.to_string());
         match DeviationStmt::parse(&mut parser) {
             Ok(yang) => match yang {
                 YangStmt::DeviationStmt(stmt) => {
@@ -5959,7 +5959,7 @@ mod tests {
       description
         "IPv4 VRRP not supported in 16.6.1.";
   }"#;
-        let mut parser = Parser::new(s.to_string());
+        let mut parser = Lexer::new(s.to_string());
         match DeviationStmt::parse(&mut parser) {
             Ok(yang) => match yang {
                 YangStmt::DeviationStmt(stmt) => {

@@ -7,7 +7,7 @@ use derive_getters::Getters;
 
 use super::core::*;
 use super::error::*;
-use super::parser::*;
+use super::lexer::*;
 use super::stmt::*;
 use super::substmt::*;
 
@@ -56,7 +56,7 @@ impl Compound for ModuleHeaderStmts {
 
 impl ModuleHeaderStmts {
     /// Parse sub statements.
-    pub fn parse(parser: &mut Parser) -> Result<ModuleHeaderStmts, YangError> {
+    pub fn parse(parser: &mut Lexer) -> Result<ModuleHeaderStmts, YangError> {
         let mut stmts = SubStmtUtil::parse_substmts(parser, Self::substmts_def())?;
 
         Ok(ModuleHeaderStmts {
@@ -91,7 +91,7 @@ impl Compound for SubmoduleHeaderStmts {
 
 impl SubmoduleHeaderStmts {
     /// Parse sub statements.
-    pub fn parse(parser: &mut Parser) -> Result<SubmoduleHeaderStmts, YangError> {
+    pub fn parse(parser: &mut Lexer) -> Result<SubmoduleHeaderStmts, YangError> {
         let mut stmts = SubStmtUtil::parse_substmts(parser, Self::substmts_def())?;
 
         Ok(SubmoduleHeaderStmts {
@@ -156,7 +156,7 @@ impl Compound for BodyStmts {
 }
 
 impl BodyStmts {
-    pub fn parse(parser: &mut Parser) -> Result<BodyStmts, YangError> {
+    pub fn parse(parser: &mut Lexer) -> Result<BodyStmts, YangError> {
         let mut stmts = SubStmtUtil::parse_substmts(parser, Self::substmts_def())?;
 
         Ok(BodyStmts {
@@ -214,7 +214,7 @@ impl Compound for MetaStmts {
 }
 
 impl MetaStmts {
-    pub fn parse(parser: &mut Parser) -> Result<MetaStmts, YangError> {
+    pub fn parse(parser: &mut Lexer) -> Result<MetaStmts, YangError> {
         let mut stmts = SubStmtUtil::parse_substmts(parser, Self::substmts_def())?;
 
         Ok(MetaStmts {
@@ -249,7 +249,7 @@ impl Compound for LinkageStmts {
 }
 
 impl LinkageStmts {
-    pub fn parse(parser: &mut Parser) -> Result<LinkageStmts, YangError> {
+    pub fn parse(parser: &mut Lexer) -> Result<LinkageStmts, YangError> {
         let mut stmts = SubStmtUtil::parse_substmts(parser, Self::substmts_def())?;
 
         Ok(LinkageStmts {
@@ -278,7 +278,7 @@ impl Compound for RevisionStmts {
 }
 
 impl RevisionStmts {
-    pub fn parse(parser: &mut Parser) -> Result<RevisionStmts, YangError> {
+    pub fn parse(parser: &mut Lexer) -> Result<RevisionStmts, YangError> {
         let mut stmts = SubStmtUtil::parse_substmts(parser, Self::substmts_def())?;
 
         Ok(RevisionStmts {
@@ -304,7 +304,7 @@ impl Compound for NumericalRestrictions {
 }
 
 impl NumericalRestrictions {
-    pub fn parse(parser: &mut Parser) -> Result<NumericalRestrictions, YangError> {
+    pub fn parse(parser: &mut Lexer) -> Result<NumericalRestrictions, YangError> {
         let mut stmts = SubStmtUtil::parse_substmts(parser, Self::substmts_def())?;
 
         Ok(NumericalRestrictions {
@@ -336,7 +336,7 @@ impl Compound for Decimal64Specification {
 }
 
 impl Decimal64Specification {
-    pub fn parse(parser: &mut Parser) -> Result<Decimal64Specification, YangError> {
+    pub fn parse(parser: &mut Lexer) -> Result<Decimal64Specification, YangError> {
         let mut stmts = SubStmtUtil::parse_substmts(parser, Self::substmts_def())?;
 
         Ok(Decimal64Specification {
@@ -469,7 +469,7 @@ impl TypeBodyStmts {
     // identityref-specification		1*base-stmt
     // bits-specification			1*bit-stmt
     // union-specification			1*type-stmt
-    pub fn parse(parser: &mut Parser) -> Result<TypeBodyStmts, YangError> {
+    pub fn parse(parser: &mut Lexer) -> Result<TypeBodyStmts, YangError> {
         let mut stmts = SubStmtUtil::parse_substmts(parser, Self::substmts_def())?;
 
         let type_body = if let Ok(fraction_digits) = collect_a_stmt!(stmts, FractionDigitsStmt) {

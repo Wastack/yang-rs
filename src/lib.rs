@@ -10,7 +10,7 @@ pub mod compound;
 pub mod config;
 pub mod core;
 pub mod error;
-pub mod parser;
+pub mod lexer;
 pub mod stmt;
 pub mod substmt;
 
